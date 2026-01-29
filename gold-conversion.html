@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Arbitrage | 黃金套利精算</title>
+    <style>
+        :root {
+            --bg-color: #F5F5F7; /* Apple Light Gray */
+            --card-bg: #FFFFFF;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --accent-blue: #0071E3;
+            --success-green: #34C759;
+            --danger-red: #FF3B30;
+            --input-bg: #F5F5F7;
+            --radius-l: 24px;
+            --radius-m: 12px;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            border-radius: var(--radius-l);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 32px;
+            margin-top: 0;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 16px;
+            font-size: 17px;
+            border: none;
+            border-radius: var(--radius-m);
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            transition: all 0.2s;
+            appearance: none; /* Remove default styling */
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-blue) inset;
+            background-color: #fff;
+        }
+
+        /* Result Section */
+        .result-card {
+            margin-top: 32px;
+            padding: 24px;
+            border-radius: var(--radius-m);
+            background-color: var(--bg-color);
+            text-align: center;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .result-card.active {
+            opacity: 1;
+            background-color: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .result-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .result-value {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .profit { color: var(--success-green); }
+        .loss { color: var(--danger-red); }
+        .neutral { color: var(--text-secondary); }
+
+        .details {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Custom Select Arrow */
+        .select-wrapper {
+            position: relative;
+        }
+        .select-wrapper::after {
+            content: "▼";
+            font-size: 10px;
+            color: var(--text-secondary);
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        /* Button */
+        button {
+            width: 100%;
+            background-color: var(--accent-blue);
+            color: white;
+            font-size: 17px;
+            font-weight: 600;
+            padding: 16px;
+            border: none;
+            border-radius: var(--radius-m);
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #005BB5;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Gold Arbitrage</h1>
+    <p class="subtitle">好市多 vs. 銀樓 價差試算</p>
+
+    <div class="input-group">
+        <label>Costco 購入總價 (TWD)</label>
+        <input type="number" id="costcoPrice" placeholder="例如：103439" inputmode="numeric">
+    </div>
+
+    <div class="input-group" style="display: flex; gap: 12px;">
+        <div style="flex: 1;">
+            <label>重量 (克/Grams)</label>
+            <input type="number" id="weightGrams" placeholder="例如：19.13" step="0.01" inputmode="decimal">
+        </div>
+        <div style="flex: 1;">
+            <label>成色 (Purity)</label>
+            <div class="select-wrapper">
+                <select id="purity">
+                    <option value="1.0" selected>24K (99.99%)</option>
+                    <option value="0.916">22K (91.6%)</option>
+                    <option value="0.75">18K (75.0%)</option>
+                    <option value="0.585">14K (58.5%)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #E5E5EA; margin: 24px 0;">
+
+    <div class="input-group">
+        <label>銀樓回收價 (每錢/TWD)</label>
+        <input type="number" id="shopPrice" placeholder="例如：20350" inputmode="numeric">
+    </div>
+
+    <div class="input-group">
+        <label>銀樓扣重/耗損 (%)</label>
+        <input type="number" id="lossRate" value="5" placeholder="5" step="0.1" inputmode="decimal">
+    </div>
+
+    <button onclick="calculate()">計算獲利 (Calculate)</button>
+
+    <div id="resultCard" class="result-card">
+        <div class="result-label">預估損益 (Estimated P&L)</div>
+        <div id="profitDisplay" class="result-value neutral">--</div>
+        <div class="details">
+            <span id="effectiveWeightDisplay">實收重量: -- 錢</span>
+            <span id="roiDisplay">ROI: --%</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * Calculates the arbitrage opportunity.
+     * Logic follows strictly defined gold unit conversions.
+     * 1 錢 (Qian) = 3.75 克 (Grams)
+     */
+    function calculate() {
+        // 1. Get Inputs
+        const costcoPrice = parseFloat(document.getElementById('costcoPrice').value);
+        const weightGrams = parseFloat(document.getElementById('weightGrams').value);
+        const purity = parseFloat(document.getElementById('purity').value);
+        const shopPrice = parseFloat(document.getElementById('shopPrice').value);
+        const lossRatePercent = parseFloat(document.getElementById('lossRate').value);
+
+        // Validation
+        if (isNaN(costcoPrice) || isNaN(weightGrams) || isNaN(shopPrice)) {
+            alert("請輸入完整的數值資料");
+            return;
+        }
+
+        // 2. Core Logic Calculation
+        // Convert Grams to Qian (1 錢 = 3.75 克)
+        const weightQian = weightGrams / 3.75;
+        
+        // Apply Deduction (Loss Rate)
+        // Formula: Weight * Purity * (1 - Loss%)
+        const lossMultiplier = 1 - (lossRatePercent / 100);
+        const effectiveWeight = weightQian * purity * lossMultiplier;
+
+        // Calculate Revenue
+        const totalRevenue = effectiveWeight * shopPrice;
+
+        // Calculate Profit/Loss
+        const profit = totalRevenue - costcoPrice;
+        const roi = (profit / costcoPrice) * 100;
+
+        // 3. UI Updates
+        const profitDisplay = document.getElementById('profitDisplay');
+        const card = document.getElementById('resultCard');
+        
+        // Format Currency
+        const formatter = new Intl.NumberFormat('zh-TW', {
+            style: 'currency',
+            currency: 'TWD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        });
+
+        profitDisplay.innerText = formatter.format(profit);
+        
+        // Set Colors
+        profitDisplay.classList.remove('profit', 'loss', 'neutral');
+        if (profit > 0) {
+            profitDisplay.classList.add('profit');
+            profitDisplay.innerText = "+" + profitDisplay.innerText;
+        } else if (profit < 0) {
+            profitDisplay.classList.add('loss');
+        } else {
+            profitDisplay.classList.add('neutral');
+        }
+
+        // Update Details
+        document.getElementById('effectiveWeightDisplay').innerText = `實收: ${effectiveWeight.toFixed(2)} 錢`;
+        document.getElementById('roiDisplay').innerText = `ROI: ${roi.toFixed(2)}%`;
+
+        // Activate Card
+        card.classList.add('active');
+    }
+
+    // Optional: Add 'Enter' key support
+    document.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            calculate();
+        }
+    });
+</script>
+
+</body>
+</html>
