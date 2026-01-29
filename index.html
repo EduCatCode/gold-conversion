@@ -3,304 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Arbitrage | 黃金套利精算</title>
+    <title>iGold Simulator | 黃金煉金術</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #F5F5F7; /* Apple Light Gray */
-            --card-bg: #FFFFFF;
-            --text-primary: #1D1D1F;
-            --text-secondary: #86868B;
-            --accent-blue: #0071E3;
-            --success-green: #34C759;
-            --danger-red: #FF3B30;
-            --input-bg: #F5F5F7;
-            --radius-l: 24px;
-            --radius-m: 12px;
-            --shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-        }
-
-        * {
-            box-sizing: border-box;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background: var(--card-bg);
+        body { font-family: 'Inter', sans-serif; background-color: #F5F5F7; }
+        
+        /* Apple-like Inputs */
+        .apple-input {
             width: 100%;
-            max-width: 420px;
-            padding: 40px;
-            border-radius: var(--radius-l);
-            box-shadow: var(--shadow);
-            transition: transform 0.2s ease;
-        }
-
-        h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        p.subtitle {
-            font-size: 14px;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-bottom: 32px;
-            margin-top: 0;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 16px;
-            font-size: 17px;
-            border: none;
-            border-radius: var(--radius-m);
-            background-color: var(--input-bg);
-            color: var(--text-primary);
+            padding: 12px 16px;
+            background: #F5F5F7;
+            border-radius: 12px;
+            font-size: 16px;
+            border: 1px solid transparent;
             transition: all 0.2s;
-            appearance: none; /* Remove default styling */
         }
-
-        input:focus, select:focus {
+        .apple-input:focus {
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
             outline: none;
-            box-shadow: 0 0 0 2px var(--accent-blue) inset;
-            background-color: #fff;
         }
 
-        /* Result Section */
-        .result-card {
-            margin-top: 32px;
-            padding: 24px;
-            border-radius: var(--radius-m);
-            background-color: var(--bg-color);
-            text-align: center;
-            opacity: 0.5;
-            transition: all 0.3s ease;
-        }
+        /* Animations */
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 80% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .animate-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        .result-card.active {
-            opacity: 1;
-            background-color: #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        .transition-all-card { transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Custom Elements */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
         }
-
-        .result-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .result-value {
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-
-        .profit { color: var(--success-green); }
-        .loss { color: var(--danger-red); }
-        .neutral { color: var(--text-secondary); }
-
-        .details {
-            margin-top: 12px;
-            font-size: 12px;
-            color: var(--text-secondary);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        /* Custom Select Arrow */
-        .select-wrapper {
-            position: relative;
-        }
-        .select-wrapper::after {
-            content: "▼";
-            font-size: 10px;
-            color: var(--text-secondary);
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-        }
-
-        /* Button */
-        button {
-            width: 100%;
-            background-color: var(--accent-blue);
-            color: white;
-            font-size: 17px;
-            font-weight: 600;
-            padding: 16px;
-            border: none;
-            border-radius: var(--radius-m);
-            cursor: pointer;
-            margin-top: 12px;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: #005BB5;
-        }
-        button:active {
-            transform: scale(0.98);
-        }
-
     </style>
 </head>
-<body>
+<body class="text-slate-800 flex flex-col items-center min-h-screen p-4">
 
-<div class="container">
-    <h1>Gold Arbitrage</h1>
-    <p class="subtitle">好市多 vs. 銀樓 價差試算</p>
+    <header class="mb-6 text-center mt-8">
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">iGold Simulator</h1>
+        <p class="text-slate-500 text-sm mt-1">好市多黃金點數煉金術</p>
+    </header>
 
-    <div class="input-group">
-        <label>Costco 購入總價 (TWD)</label>
-        <input type="number" id="costcoPrice" placeholder="例如：103439" inputmode="numeric">
-    </div>
+    <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <div class="lg:col-span-4 space-y-4">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">參數設定</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">好市多售價 (Costco Price)</label>
+                        <input type="number" id="inputPrice" class="apple-input" value="103439">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">重量 (克)</label>
+                            <input type="number" id="inputWeight" class="apple-input" value="19.13" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">回饋率 (%)</label>
+                            <input type="number" id="inputReward" class="apple-input" value="2.0" placeholder="黑鑽卡+信用卡">
+                        </div>
+                    </div>
 
-    <div class="input-group" style="display: flex; gap: 12px;">
-        <div style="flex: 1;">
-            <label>重量 (克/Grams)</label>
-            <input type="number" id="weightGrams" placeholder="例如：19.13" step="0.01" inputmode="decimal">
+                    <div class="pt-4 border-t border-slate-100">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">銀樓回收價 (每錢)</label>
+                        <input type="number" id="inputShopPrice" class="apple-input" value="20350">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">銀樓扣重 (%)</label>
+                        <input type="number" id="inputLoss" class="apple-input" value="5">
+                    </div>
+
+                    <button onclick="initSimulation()" class="w-full bg-black text-white font-medium py-3 rounded-xl hover:bg-slate-800 transition active:scale-95 shadow-lg">
+                        重置並開始模擬
+                    </button>
+                </div>
+            </div>
         </div>
-        <div style="flex: 1;">
-            <label>成色 (Purity)</label>
-            <div class="select-wrapper">
-                <select id="purity">
-                    <option value="1.0" selected>24K (99.99%)</option>
-                    <option value="0.916">22K (91.6%)</option>
-                    <option value="0.75">18K (75.0%)</option>
-                    <option value="0.585">14K (58.5%)</option>
-                </select>
+
+        <div class="lg:col-span-8">
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden relative h-full flex flex-col">
+                
+                <div class="bg-slate-50 p-4 border-b border-slate-100 flex justify-between items-center">
+                    <div class="flex gap-2">
+                        <span id="step-dot-1" class="w-2.5 h-2.5 rounded-full bg-slate-300 transition-colors duration-500"></span>
+                        <span id="step-dot-2" class="w-2.5 h-2.5 rounded-full bg-slate-300 transition-colors duration-500"></span>
+                        <span id="step-dot-3" class="w-2.5 h-2.5 rounded-full bg-slate-300 transition-colors duration-500"></span>
+                        <span id="step-dot-4" class="w-2.5 h-2.5 rounded-full bg-slate-300 transition-colors duration-500"></span>
+                    </div>
+                    <div class="text-xs font-mono text-slate-400" id="phase-text">準備就緒</div>
+                </div>
+
+                <div class="flex-1 relative p-8 flex items-center justify-center bg-slate-50/50">
+                    
+                    <div id="actor-wallet" class="absolute transition-all-card duration-700 flex flex-col items-center z-20">
+                        <div class="text-6xl mb-2 drop-shadow-md">👛</div>
+                        <div id="display-cost" class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-bold text-sm border border-emerald-200">
+                            $-
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1 font-medium">初始本金</div>
+                    </div>
+
+                    <div id="scene-costco" class="absolute opacity-0 scale-90 transition-all duration-700 flex flex-col items-center">
+                        <div class="text-7xl mb-2 grayscale opacity-50">🛒</div>
+                    </div>
+
+                    <div id="actor-gold" class="absolute opacity-0 transition-all duration-700 flex flex-col items-center z-10">
+                        <div class="text-6xl animate-float drop-shadow-xl filter brightness-110">🥇</div>
+                        <div class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold mt-2">純金手鐲</div>
+                    </div>
+
+                    <div id="actor-points" class="absolute opacity-0 transition-all duration-700 flex flex-col items-center z-10">
+                        <div class="text-4xl animate-bounce drop-shadow-md">💎</div>
+                        <div id="display-points" class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-xs font-bold mt-2 border border-blue-200">
+                            +0 點
+                        </div>
+                    </div>
+
+                    <div id="scene-shop" class="absolute right-10 top-1/2 -translate-y-1/2 opacity-0 transition-all duration-700 flex flex-col items-center">
+                        <div class="text-6xl mb-2">🏪</div>
+                        <div class="text-xs text-slate-400">銀樓</div>
+                    </div>
+
+                    <div id="actor-monster" class="absolute bottom-10 opacity-0 transition-all duration-500 flex flex-col items-center">
+                        <div class="text-4xl">🔥</div>
+                        <div class="text-xs text-red-500 font-bold bg-white px-2 rounded-full shadow-sm mt-1">耗損 5%</div>
+                    </div>
+
+                    <div id="actor-final-cash" class="absolute opacity-0 transition-all duration-700 flex flex-col items-center z-20">
+                        <div class="text-5xl mb-2">💵</div>
+                        <div id="display-revenue" class="bg-slate-200 text-slate-700 px-3 py-1 rounded-lg font-bold text-sm border border-slate-300">
+                            $-
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1">回收現金</div>
+                    </div>
+
+                </div>
+
+                <div class="p-6 bg-white border-t border-slate-100 relative min-h-[140px]">
+                    <div id="dialog-box" class="flex gap-4 items-start transition-all duration-300">
+                        <div class="text-3xl p-2 bg-slate-50 rounded-2xl">💁🏻‍♂️</div>
+                        <div>
+                            <h3 id="dialog-title" class="font-bold text-slate-800 text-lg mb-1">準備開始</h3>
+                            <p id="dialog-text" class="text-slate-600 text-sm leading-relaxed">
+                                請輸入左側參數，我們來看看這筆生意是賺是賠。<br>
+                                特別注意：我們會將<b>「現金」</b>與<b>「點數」</b>分開計算。
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-next" onclick="nextStep()" disabled class="absolute right-6 bottom-6 bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        下一步 →
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <hr style="border: 0; border-top: 1px solid #E5E5EA; margin: 24px 0;">
+    <script>
+        // 狀態管理
+        let state = {
+            step: 0,
+            cost: 0,
+            weightG: 0,
+            rewardRate: 0,
+            shopPrice: 0,
+            lossRate: 0,
+            // 計算結果
+            pointsValue: 0,
+            effectiveWeightQian: 0,
+            cashRevenue: 0,
+            cashProfit: 0,
+            totalProfit: 0
+        };
 
-    <div class="input-group">
-        <label>銀樓回收價 (每錢/TWD)</label>
-        <input type="number" id="shopPrice" placeholder="例如：20350" inputmode="numeric">
-    </div>
+        const els = {
+            wallet: document.getElementById('actor-wallet'),
+            costco: document.getElementById('scene-costco'),
+            gold: document.getElementById('actor-gold'),
+            points: document.getElementById('actor-points'),
+            shop: document.getElementById('scene-shop'),
+            monster: document.getElementById('actor-monster'),
+            finalCash: document.getElementById('actor-final-cash'),
+            
+            displayCost: document.getElementById('display-cost'),
+            displayPoints: document.getElementById('display-points'),
+            displayRevenue: document.getElementById('display-revenue'),
+            
+            dialogTitle: document.getElementById('dialog-title'),
+            dialogText: document.getElementById('dialog-text'),
+            phaseText: document.getElementById('phase-text'),
+            btnNext: document.getElementById('btn-next'),
+            
+            dots: [1,2,3,4].map(i => document.getElementById(`step-dot-${i}`))
+        };
 
-    <div class="input-group">
-        <label>銀樓扣重/耗損 (%)</label>
-        <input type="number" id="lossRate" value="5" placeholder="5" step="0.1" inputmode="decimal">
-    </div>
+        // 格式化貨幣
+        const formatMoney = (num) => new Intl.NumberFormat('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 }).format(num);
 
-    <button onclick="calculate()">計算獲利 (Calculate)</button>
+        function initSimulation() {
+            // 1. 抓取數值
+            state.cost = parseFloat(document.getElementById('inputPrice').value);
+            state.weightG = parseFloat(document.getElementById('inputWeight').value);
+            state.rewardRate = parseFloat(document.getElementById('inputReward').value);
+            state.shopPrice = parseFloat(document.getElementById('inputShopPrice').value);
+            state.lossRate = parseFloat(document.getElementById('inputLoss').value);
 
-    <div id="resultCard" class="result-card">
-        <div class="result-label">預估損益 (Estimated P&L)</div>
-        <div id="profitDisplay" class="result-value neutral">--</div>
-        <div class="details">
-            <span id="effectiveWeightDisplay">實收重量: -- 錢</span>
-            <span id="roiDisplay">ROI: --%</span>
-        </div>
-    </div>
-</div>
+            // 2. 計算邏輯
+            state.pointsValue = Math.round(state.cost * (state.rewardRate / 100));
+            const weightQian = state.weightG / 3.75;
+            state.effectiveWeightQian = weightQian * (1 - (state.lossRate / 100));
+            state.cashRevenue = Math.round(state.effectiveWeightQian * state.shopPrice);
+            state.cashProfit = state.cashRevenue - state.cost;
+            state.totalProfit = state.cashProfit + state.pointsValue;
 
-<script>
-    /**
-     * Calculates the arbitrage opportunity.
-     * Logic follows strictly defined gold unit conversions.
-     * 1 錢 (Qian) = 3.75 克 (Grams)
-     */
-    function calculate() {
-        // 1. Get Inputs
-        const costcoPrice = parseFloat(document.getElementById('costcoPrice').value);
-        const weightGrams = parseFloat(document.getElementById('weightGrams').value);
-        const purity = parseFloat(document.getElementById('purity').value);
-        const shopPrice = parseFloat(document.getElementById('shopPrice').value);
-        const lossRatePercent = parseFloat(document.getElementById('lossRate').value);
-
-        // Validation
-        if (isNaN(costcoPrice) || isNaN(weightGrams) || isNaN(shopPrice)) {
-            alert("請輸入完整的數值資料");
-            return;
+            // 3. 重置 UI
+            state.step = 1;
+            resetVisuals();
+            els.displayCost.innerText = formatMoney(state.cost);
+            els.displayPoints.innerText = `+ ${formatMoney(state.pointsValue)} 點數`;
+            els.displayRevenue.innerText = formatMoney(state.cashRevenue);
+            
+            els.btnNext.disabled = false;
+            updateStep(1);
         }
 
-        // 2. Core Logic Calculation
-        // Convert Grams to Qian (1 錢 = 3.75 克)
-        const weightQian = weightGrams / 3.75;
-        
-        // Apply Deduction (Loss Rate)
-        // Formula: Weight * Purity * (1 - Loss%)
-        const lossMultiplier = 1 - (lossRatePercent / 100);
-        const effectiveWeight = weightQian * purity * lossMultiplier;
-
-        // Calculate Revenue
-        const totalRevenue = effectiveWeight * shopPrice;
-
-        // Calculate Profit/Loss
-        const profit = totalRevenue - costcoPrice;
-        const roi = (profit / costcoPrice) * 100;
-
-        // 3. UI Updates
-        const profitDisplay = document.getElementById('profitDisplay');
-        const card = document.getElementById('resultCard');
-        
-        // Format Currency
-        const formatter = new Intl.NumberFormat('zh-TW', {
-            style: 'currency',
-            currency: 'TWD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        });
-
-        profitDisplay.innerText = formatter.format(profit);
-        
-        // Set Colors
-        profitDisplay.classList.remove('profit', 'loss', 'neutral');
-        if (profit > 0) {
-            profitDisplay.classList.add('profit');
-            profitDisplay.innerText = "+" + profitDisplay.innerText;
-        } else if (profit < 0) {
-            profitDisplay.classList.add('loss');
-        } else {
-            profitDisplay.classList.add('neutral');
+        function resetVisuals() {
+            // 重置所有位置和透明度
+            els.wallet.style = "transform: translate(0, 0); opacity: 1;";
+            els.costco.style = "opacity: 0; transform: scale(0.9);";
+            els.gold.style = "opacity: 0;";
+            els.points.style = "opacity: 0;";
+            els.shop.style = "opacity: 0; right: 40px;";
+            els.monster.style = "opacity: 0;";
+            els.finalCash.style = "opacity: 0;";
+            
+            // 重置進度點
+            els.dots.forEach(d => d.className = "w-2.5 h-2.5 rounded-full bg-slate-300 transition-colors duration-500");
         }
 
-        // Update Details
-        document.getElementById('effectiveWeightDisplay').innerText = `實收: ${effectiveWeight.toFixed(2)} 錢`;
-        document.getElementById('roiDisplay').innerText = `ROI: ${roi.toFixed(2)}%`;
-
-        // Activate Card
-        card.classList.add('active');
-    }
-
-    // Optional: Add 'Enter' key support
-    document.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            calculate();
+        function nextStep() {
+            state.step++;
+            updateStep(state.step);
         }
-    });
-</script>
 
+        function updateStep(step) {
+            // 更新進度點
+            els.dots.forEach((d, i) => {
+                if (i < step) d.classList.replace('bg-slate-300', 'bg-blue-600');
+            });
+
+            switch (step) {
+                case 1: // 初始狀態
+                    els.dialogTitle.innerText = "第一步：投入資本";
+                    els.dialogText.innerHTML = `我們準備了 <b>${formatMoney(state.cost)}</b> 現金。<br>這筆錢即將變成好市多的業績。`;
+                    els.phaseText.innerText = "PHASE 1: CAPITAL";
+                    break;
+
+                case 2: // 購買完成 (錢包消失，出現黃金與點數)
+                    // Animation
+                    els.wallet.style.opacity = '0';
+                    els.wallet.style.transform = 'scale(0.5)';
+                    
+                    els.costco.style.opacity = '1';
+                    els.costco.style.transform = 'scale(1)';
+                    
+                    setTimeout(() => {
+                        els.gold.style.opacity = '1';
+                        els.gold.style.transform = 'translate(-50px, 0)'; // Gold goes left
+                        
+                        els.points.style.opacity = '1';
+                        els.points.style.transform = 'translate(50px, -20px)'; // Points float right
+                    }, 400);
+
+                    // Text
+                    els.dialogTitle.innerText = "第二步：好市多消費";
+                    els.dialogText.innerHTML = `消費完成！你獲得了實體黃金，還有 <b>${formatMoney(state.pointsValue)}</b> 的點數回饋。<br><span class="text-blue-600 text-xs">注意：點數已經入袋，這是我們第一筆確定的獲利。</span>`;
+                    els.phaseText.innerText = "PHASE 2: PURCHASE & REWARD";
+                    break;
+
+                case 3: // 前往銀樓 (黃金移動，怪獸出現)
+                    // Animation
+                    els.costco.style.opacity = '0';
+                    els.points.style.transform = 'translate(120px, -150px) scale(0.8)'; // Points move to "safe zone"
+                    
+                    els.gold.style.transition = 'all 1s ease';
+                    els.gold.style.transform = 'translate(0, 0) scale(1.2)'; // Center Gold
+                    
+                    els.shop.style.opacity = '1';
+
+                    setTimeout(() => {
+                        els.monster.style.opacity = '1';
+                        els.monster.style.transform = 'translateY(-20px)';
+                    }, 600);
+
+                    // Text
+                    els.dialogTitle.innerText = "第三步：銀樓變現";
+                    els.dialogText.innerHTML = `帶著黃金去銀樓。老闆說要扣除 <b>${state.lossRate}%</b> 的重量耗損。<br><span class="text-red-500">這隻「火耗怪獸」正在吃掉你的黃金價值...</span>`;
+                    els.phaseText.innerText = "PHASE 3: LIQUIDATION & LOSS";
+                    break;
+
+                case 4: // 最終結算
+                    // Animation
+                    els.gold.style.opacity = '0';
+                    els.monster.style.opacity = '0';
+                    els.shop.style.opacity = '0.5';
+                    
+                    els.finalCash.style.opacity = '1';
+                    els.finalCash.style.transform = 'translate(-60px, 0)';
+                    
+                    els.points.style.transition = 'all 0.8s ease';
+                    els.points.style.transform = 'translate(60px, 0) scale(1.2)'; // Bring points back to compare
+
+                    // Logic for text color
+                    const isCashProfitable = state.cashProfit > 0;
+                    const isTotalProfitable = state.totalProfit > 0;
+                    
+                    const cashClass = isCashProfitable ? 'text-green-600' : 'text-red-500';
+                    const totalClass = isTotalProfitable ? 'text-green-600' : 'text-red-500';
+
+                    // Text
+                    els.dialogTitle.innerText = "最終結果：真相大白";
+                    let resultHTML = `<ul class="space-y-1 text-sm">`;
+                    resultHTML += `<li>1. 現金部分：${formatMoney(state.cashRevenue)} - ${formatMoney(state.cost)} = <b class="${cashClass}">${formatMoney(state.cashProfit)}</b></li>`;
+                    resultHTML += `<li>2. 點數回饋：<b class="text-blue-600">+ ${formatMoney(state.pointsValue)}</b> (已入袋)</li>`;
+                    resultHTML += `<li class="border-t pt-1 mt-1">3. 綜合損益：<b class="${totalClass} text-base">${formatMoney(state.totalProfit)}</b></li>`;
+                    resultHTML += `</ul>`;
+                    
+                    if (!isCashProfitable && isTotalProfitable) {
+                        resultHTML += `<p class="text-xs text-slate-500 mt-2">💡 結論：現金雖然小賠，但靠著點數回饋，整體是賺的！(俗稱：賺點數)</p>`;
+                    } else if (isCashProfitable) {
+                        resultHTML += `<p class="text-xs text-green-600 mt-2">🎉 結論：現金和點數雙贏！完美的套利！</p>`;
+                    } else {
+                        resultHTML += `<p class="text-xs text-red-500 mt-2">⚠️ 結論：點數也補不回價差，這筆生意會賠錢。</p>`;
+                    }
+
+                    els.dialogText.innerHTML = resultHTML;
+                    els.phaseText.innerText = "PHASE 4: FINAL RESULT";
+                    els.btnNext.disabled = true;
+                    els.btnNext.innerText = "模擬結束";
+                    break;
+            }
+        }
+    </script>
 </body>
 </html>
